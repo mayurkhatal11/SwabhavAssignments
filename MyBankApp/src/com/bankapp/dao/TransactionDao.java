@@ -23,14 +23,12 @@ public class TransactionDao implements ITransactionDao {
 			stmt.setString(4, transaction.getDescription());
 
 			int rowsAffected = stmt.executeUpdate();
-
-			// A successful INSERT will affect 1 row.
 			return rowsAffected > 0;
 		} catch (SQLException e) {
 			System.err.println(
 					"CRITICAL ERROR: Failed to add transaction for account: " + transaction.getAccountNumber());
 			e.printStackTrace();
-			return false; // Signal that the operation failed
+			return false;
 		}
 	}
 
