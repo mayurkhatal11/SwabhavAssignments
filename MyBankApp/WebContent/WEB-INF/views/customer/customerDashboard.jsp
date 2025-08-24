@@ -28,7 +28,6 @@
 		<%=customer.getFirstName()%>!
 	</h2>
 
-	<!-- Current Balance Display Card -->
 	<div class="card text-center text-white bg-success mb-4 shadow">
 		<div class="card-header">Current Available Balance</div>
 		<div class="card-body">
