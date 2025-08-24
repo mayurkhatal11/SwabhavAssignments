@@ -10,7 +10,6 @@ public class Transaction {
 	private String description;
 	private Timestamp transactionDate;
 
-	// Getters and Setters
 	public int getId() {
 		return id;
 	}
