@@ -11,7 +11,6 @@ public class User {
 	private String role;
 	private String status;
 
-	// Getters and Setters
 	public int getId() {
 		return id;
 	}
