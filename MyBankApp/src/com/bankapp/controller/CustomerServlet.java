@@ -30,7 +30,6 @@ public class CustomerServlet extends HttpServlet {
 
 		User customer = (User) session.getAttribute("user");
 
-		// Refresh customer data in the session to ensure it's always up-to-date
 		customer = customerService.getCustomerDetails(customer.getAccountNumber());
 		session.setAttribute("user", customer);
 
@@ -54,9 +53,6 @@ public class CustomerServlet extends HttpServlet {
 		}
 	}
 
-	/**
-	 * Handles POST requests from customer forms (transactions, profile updates).
-	 */
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -86,7 +82,6 @@ public class CustomerServlet extends HttpServlet {
 			String transactionType = request.getParameter("transactionType");
 
 			try {
-				// Determine which amount field to parse based on the transaction type
 				String amountString = "credit".equals(transactionType) ? request.getParameter("creditAmount")
 						: request.getParameter("transferAmount");
 
@@ -97,13 +92,11 @@ public class CustomerServlet extends HttpServlet {
 				double amount = Double.parseDouble(amountString);
 
 				if ("credit".equals(transactionType)) {
-					// Call the service to perform the credit
 					customerService.makeCredit(customer.getAccountNumber(), amount);
 					session.setAttribute("flashMessage", "Amount credited successfully!");
 					session.setAttribute("flashMessageType", "success");
 				} else if ("transfer".equals(transactionType)) {
 					String recipientAccount = request.getParameter("toAccount");
-					// Call the service to perform the transfer
 					customerService.makeTransfer(customer.getAccountNumber(), recipientAccount, amount);
 					session.setAttribute("flashMessage", "Transfer successful!");
 					session.setAttribute("flashMessageType", "success");
@@ -112,8 +105,6 @@ public class CustomerServlet extends HttpServlet {
 				session.setAttribute("flashMessage", "Invalid amount entered. Please use numbers only.");
 				session.setAttribute("flashMessageType", "danger");
 			} catch (Exception e) {
-				// Catches all business rule exceptions from the service layer
-				// (e.g., "Insufficient Balance", "Amount must be positive")
 				session.setAttribute("flashMessage", e.getMessage());
 				session.setAttribute("flashMessageType", "danger");
 			}
@@ -122,18 +113,11 @@ public class CustomerServlet extends HttpServlet {
 		}
 	}
 
-	/**
-	 * Helper method to get the action from the URL path (e.g., /dashboard) or a
-	 * parameter.
-	 */
 	private String getAction(HttpServletRequest request) {
 		String pathInfo = request.getPathInfo();
 		if (pathInfo != null && !"/".equals(pathInfo)) {
-			// Return the action from the path, removing the leading slash (e.g.,
-			// "dashboard")
 			return pathInfo.substring(1);
 		}
-		// Fallback for parameter-based actions, with "dashboard" as the default
 		String actionParam = request.getParameter("action");
 		return (actionParam == null) ? "dashboard" : actionParam;
 	}
