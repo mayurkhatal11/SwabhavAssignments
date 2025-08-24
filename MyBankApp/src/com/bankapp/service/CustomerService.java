@@ -34,7 +34,6 @@ public class CustomerService implements ICustomerService {
 	public void makeTransfer(String senderAccountNumber, String recipientAccountNumber, double amount)
 			throws Exception {
 
-		// --- STAGE 1: INITIAL VALIDATION ---
 		if (amount <= 0) {
 			throw new Exception("Transfer amount must be a positive number and above 0.");
 		}
@@ -42,10 +41,6 @@ public class CustomerService implements ICustomerService {
 			throw new Exception("Cannot transfer funds to your own account.");
 		}
 
-		// --- STAGE 2: FETCH FRESH DATA & PERFORM CRITICAL VALIDATION ---
-
-		// Get the MOST RECENT state of the sender's account directly from the database.
-		// This is the most critical step to prevent over-spending.
 		User sender = userDao.getUserByAccountNumber(senderAccountNumber);
 
 		User recipient = userDao.getUserByAccountNumber(recipientAccountNumber);
@@ -54,50 +49,40 @@ public class CustomerService implements ICustomerService {
 			throw new Exception("The recipient account number does not exist.");
 		}
 
-		// THE CRITICAL BALANCE CHECK:
-		// Compare the amount to be sent with the sender's fresh, current balance.
 		if (sender.getBalance() < amount) {
-			// If the balance is insufficient, throw an exception and STOP the entire
-			// process.
-			throw new Exception("Insufficient balance for this transfer. Your available balance is $"
+			throw new Exception("Insufficient balance for this transfer. Your available balance is Rs. "
 					+ String.format("%.2f", sender.getBalance()));
 		}
 
-		// --- STAGE 3: PROCESS THE TRANSACTION (This code only runs if the balance is
-		// sufficient) ---
-
-		// 1. Debit from sender
+		// Debit from sender
 		double senderNewBalance = sender.getBalance() - amount;
 		userDao.updateUserBalance(sender.getAccountNumber(), senderNewBalance);
 
-		// 2. Record debit for sender
+		// Record debit for sender
 		Transaction senderTxn = new Transaction();
 		senderTxn.setAccountNumber(sender.getAccountNumber());
 		senderTxn.setType("transfer");
 		senderTxn.setAmount(amount * -1);
 		senderTxn.setDescription("Transferred to account: " + recipientAccountNumber);
 		if (!transactionDao.addTransaction(senderTxn)) {
-			// If this fails, roll back the balance change to prevent data inconsistency.
-			userDao.updateUserBalance(sender.getAccountNumber(), sender.getBalance()); // Revert
+			userDao.updateUserBalance(sender.getAccountNumber(), sender.getBalance());
 			throw new Exception(
 					"A system error occurred while recording the transaction. The transfer has been cancelled.");
 		}
 
-		// 3. Credit to recipient
+		// Credit to recipient
 		double recipientNewBalance = recipient.getBalance() + amount;
 		userDao.updateUserBalance(recipient.getAccountNumber(), recipientNewBalance);
 
-		// 4. Record credit for recipient
+		// Record credit for recipient
 		Transaction recipientTxn = new Transaction();
 		recipientTxn.setAccountNumber(recipient.getAccountNumber());
 		recipientTxn.setType("credit");
 		recipientTxn.setAmount(amount);
 		recipientTxn.setDescription("Credited from account: " + senderAccountNumber);
 		if (!transactionDao.addTransaction(recipientTxn)) {
-			// If this final step fails, it's a critical error. Roll back everything.
 			userDao.updateUserBalance(sender.getAccountNumber(), sender.getBalance()); // Revert sender
 			userDao.updateUserBalance(recipient.getAccountNumber(), recipient.getBalance()); // Revert recipient
-			// Attempt to delete the sender's transaction record if possible (advanced)
 			throw new Exception("A critical system error occurred. The transfer has been cancelled.");
 		}
 	}
